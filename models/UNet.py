@@ -1,12 +1,37 @@
 from einops import rearrange
 import torch
 from torch import nn
-from models.Utils import SinusoidalPosEmb, Downsample, Attention, Upsample, Norm, TimeEmbedding
+from models.Utils import SinusoidalPosEmb, Downsample, Attention, Upsample, Norm, TimeEmbedding, extract
 from torch.nn import init
+import torch.nn.functional as F
+
+
+class UNetTrainer(nn.Module):
+    def __init__(self, model, beta_1, beta_t, total_diffusion_steps):
+        super().__init__()
+        self.model = model
+        self.diffusion_steps = total_diffusion_steps
+        self.register_buffer('betas', torch.linspace(beta_1, beta_t, total_diffusion_steps).double())
+
+        alphas = 1. - self.betas
+        alphas_bar = torch.cumprod(alphas, dim=0)
+
+        # calculations for diffusion q(x_t | x_{t-1}) and others
+        self.register_buffer('sqrt_alphas_bar', torch.sqrt(alphas_bar))
+        self.register_buffer('sqrt_one_minus_alphas_bar', torch.sqrt(1. - alphas_bar))
+
+    def forward(self, x_0):
+        t = torch.randint(self.total_diffusion_steps, size=(x_0.shape[0],), device=x_0.device)
+        noise = torch.randn_like(x_0)
+        x_t = (extract(self.sqrt_alphas_bar, t, x_0.shape) * x_0 +
+               extract(self.sqrt_one_minus_alphas_bar, t, x_0.shape) * noise)
+        loss = F.mse_loss(self.model(x_t, t), noise, reduction='none')
+
+        return loss
 
 
 class AttentionUNet(nn.Module):
-    def __init__(self, dim=128, out_dim=None, dim_mults=(1, 2, 2, 2), channels=3, attn=[1], num_res_blocks=2, dropout=0.):
+    def __init__(self, dim=128, dim_mults=(1, 2, 2, 2), channels=3, attn=[1], num_res_blocks=2, dropout=0.):
         super().__init__()
 
         # Dimensionality
@@ -59,11 +84,6 @@ class AttentionUNet(nn.Module):
             if i != 0:
                 self.ups.append(Upsample(cur_dim))
                 dims.append(cur_dim)
-
-        if out_dim:
-            self.out_dim = out_dim
-        else:
-            self.out_dim = channels
 
         self.final_block = nn.Sequential(
             nn.GroupNorm(32, cur_dim),

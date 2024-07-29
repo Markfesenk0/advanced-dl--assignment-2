@@ -7,12 +7,12 @@ import torchvision.transforms as transforms
 
 # Data transforms
 transform = transforms.Compose([
-    transforms.Resize(image_size),
+    transforms.RandomHorizontalFlip(),
     transforms.ToTensor(),
-    transforms.Normalize((0.5,), (0.5,))
+    transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
 ])
 
 # Load the dataset
 train_dataset = FashionMNIST(root='./data', train=True, transform=transform, download=True)
-train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, drop_last=True)
 

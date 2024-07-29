@@ -115,12 +115,13 @@ def Downsample(dim, dim_out=None):
     )
 
 
-def extract(a, timestamps, shape) -> torch.Tensor:
-    batch_size = timestamps.shape[0]
-    out = a.gather(-1, timestamps)
-
-    return out.reshape(batch_size, *((1,) * (len(shape) - 1))).to(timestamps.device)
-
+def extract(v, t, x_shape):
+    """
+    Extract coefficients at specified timesteps and
+    reshape to [batch_size, 1, 1, 1, 1, ...] for broadcasting purposes.
+    """
+    out = torch.gather(v, index=t, dim=0).float()
+    return out.view([t.shape[0]] + [1] * (len(x_shape) - 1))
 
 # class Attention(nn.Module):
 #     def __init__(self, dim, heads=4, dim_head=32, num_mem_kv=4):
