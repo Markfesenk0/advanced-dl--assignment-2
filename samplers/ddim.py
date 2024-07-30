@@ -20,7 +20,7 @@ def extract(v, i, shape):
 
 
 class DDIMSampler(nn.Module):
-    def __init__(self, model, beta: Tuple[int, int], T: int):
+    def __init__(self, model, beta: Tuple[int, int], T: int, init_noise_sigma=1.0):
         super().__init__()
         self.model = model
         self.T = T
@@ -32,7 +32,7 @@ class DDIMSampler(nn.Module):
         # Add dtype attribute
         self.dtype = torch.float32
         # Add init_noise_sigma attribute
-        self.init_noise_sigma = 1.0
+        self.init_noise_sigma = init_noise_sigma
 
     def set_timesteps(self, num_inference_steps, device=None):
         if device is None:
@@ -85,7 +85,7 @@ class DDIMSampler(nn.Module):
         # # previous sequence
         # time_steps_prev = np.concatenate([[0], time_steps[:-1]])
 
-        x = [x_t]
+        x = [x_t * self.init_noise_sigma]  # Use init_noise_sigma to scale initial noise
         with tqdm(reversed(range(steps)), colour="#6565b5", total=steps) as sampling_steps:
             for i in sampling_steps:
                 x_t = self.sample_one_step(x_t, time_steps[i], time_steps_prev[i], eta)
