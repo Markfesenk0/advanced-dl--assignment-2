@@ -34,7 +34,6 @@ class DDIMSampler(nn.Module):
         # Add init_noise_sigma attribute
         self.init_noise_sigma = 1.0
 
-
     def set_timesteps(self, num_inference_steps, device=None):
         if device is None:
             device = self.alpha_t_bar.device
