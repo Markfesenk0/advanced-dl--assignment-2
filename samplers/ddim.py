@@ -47,14 +47,14 @@ class DDIMSampler(nn.Module):
         ).to(device)
 
     @torch.no_grad()
-    def sample_one_step(self, x_t, time_step: int, prev_time_step: int, eta: float):
+    def sample_one_step(self, x_t, time_step: int, prev_time_step: int, encoder_hidden_states: torch.Tensor, eta: float):
         t = torch.full((x_t.shape[0],), time_step, device=x_t.device, dtype=torch.long)
         prev_t = torch.full((x_t.shape[0],), prev_time_step, device=x_t.device, dtype=torch.long)
 
         alpha_t = extract(self.alpha_t_bar, t, x_t.shape)
         alpha_t_prev = extract(self.alpha_t_bar, prev_t, x_t.shape)
 
-        epsilon_theta_t = self.model(x_t, t)
+        epsilon_theta_t = self.model(x_t, t, encoder_hidden_states=encoder_hidden_states)
 
         sigma_t = eta * torch.sqrt((1 - alpha_t_prev) / (1 - alpha_t) * (1 - alpha_t / alpha_t_prev))
         epsilon_t = torch.randn_like(x_t)
@@ -69,9 +69,9 @@ class DDIMSampler(nn.Module):
     def scale_model_input(self, sample: torch.Tensor, *args, **kwargs) -> torch.Tensor:
         return sample
 
-    def step(self, model_output: torch.Tensor, timestep: int, sample: torch.Tensor, generator=None, **kwargs):
+    def step(self, model_output: torch.Tensor, timestep: int, sample: torch.Tensor, encoder_hidden_states: torch.Tensor, generator=None, **kwargs):
         prev_timestep = max(0, timestep - 1)
-        return self.sample_one_step(sample, timestep, prev_timestep, eta=kwargs.get('eta', 0.0))
+        return self.sample_one_step(sample, timestep, prev_timestep, encoder_hidden_states, eta=kwargs.get('eta', 0.0))
 
     def add_noise(self, original_samples: torch.Tensor, noise: torch.Tensor,
                   timesteps: torch.IntTensor) -> torch.Tensor:
@@ -90,7 +90,7 @@ class DDIMSampler(nn.Module):
         return model_output
 
     @torch.no_grad()
-    def forward(self, x_t, eta=0.0, only_return_x_0: bool = True, interval: int = 1):
+    def forward(self, x_t, encoder_hidden_states: torch.Tensor, eta=0.0, only_return_x_0: bool = True, interval: int = 1):
         steps = self.num_inference_steps
         time_steps = self.timesteps
         time_steps_prev = torch.cat([torch.tensor([0]).to(time_steps.device), time_steps[:-1]])
@@ -111,7 +111,7 @@ class DDIMSampler(nn.Module):
         x = [x_t * self.init_noise_sigma]
         with tqdm(reversed(range(steps)), colour="#6565b5", total=steps) as sampling_steps:
             for i in sampling_steps:
-                x_t = self.sample_one_step(x_t, time_steps[i], time_steps_prev[i], eta)
+                x_t = self.sample_one_step(x_t, time_steps[i], time_steps_prev[i], encoder_hidden_states, eta)
 
                 if not only_return_x_0 and ((steps - i) % interval == 0 or i == 0):
                     x.append(torch.clip(x_t, -1.0, 1.0))
