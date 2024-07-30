@@ -31,6 +31,7 @@ class DDIMSampler(nn.Module):
 
         # Add dtype attribute
         self.dtype = torch.float32
+
         # Add init_noise_sigma attribute
         self.init_noise_sigma = init_noise_sigma
 
