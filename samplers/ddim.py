@@ -67,6 +67,10 @@ class DDIMSampler(nn.Module):
         )
         return x_t_minus_one
 
+    def step(self, latents, t, **kwargs):
+        prev_t = max(0, t - 1)
+        return self.sample_one_step(latents, t, prev_t, eta=kwargs.get('eta', 0.0))
+
     @torch.no_grad()
     def forward(self, x_t, eta=0.0, only_return_x_0: bool = True, interval: int = 1):
         steps = self.num_inference_steps
