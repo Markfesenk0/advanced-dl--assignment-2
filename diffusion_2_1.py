@@ -18,11 +18,11 @@ for T in [5, 10, 50, 100]:
     ddim_sampler = DDIMSampler(pipe.unet, (beta_start, beta_end), T)
 
     # Move the pipeline components to GPU
-    pipe = pipe.to("cuda")
     pipe.unet.to("cuda")
     pipe.text_encoder.to("cuda")
     pipe.vae.to("cuda")
     ddim_sampler.to("cuda")
+    pipe = pipe.to("cuda")
 
     ddim_sampler.set_timesteps(num_inference_steps=T, device="cuda")
 
