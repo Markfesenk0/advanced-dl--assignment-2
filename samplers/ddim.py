@@ -31,6 +31,9 @@ class DDIMSampler(nn.Module):
 
         # Add dtype attribute
         self.dtype = torch.float32
+        # Add init_noise_sigma attribute
+        self.init_noise_sigma = 1.0
+
 
     def set_timesteps(self, num_inference_steps, device=None):
         if device is None:
