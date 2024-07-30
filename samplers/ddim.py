@@ -16,7 +16,7 @@ def extract(v, i, shape):
 class DDIMSampler(nn.Module):
     def __init__(self, model, beta: Tuple[int, int], T: int, init_noise_sigma=1.0, order=1):
         super().__init__()
-        self.model = model
+        self.model = model.to("cuda")
         self.T = T
 
         beta_t = torch.linspace(*beta, T, dtype=torch.float32)
@@ -33,6 +33,8 @@ class DDIMSampler(nn.Module):
 
         self.timesteps = None
         self.num_inference_steps = None
+
+        self.alpha_t_bar = self.alpha_t_bar.to("cuda")
 
 
     def set_timesteps(self, num_inference_steps, device=None):
@@ -57,10 +59,10 @@ class DDIMSampler(nn.Module):
         sigma_t = eta * torch.sqrt((1 - alpha_t_prev) / (1 - alpha_t) * (1 - alpha_t / alpha_t_prev))
         epsilon_t = torch.randn_like(x_t)
         x_t_minus_one = (
-            torch.sqrt(alpha_t_prev / alpha_t) * x_t +
-            (torch.sqrt(1 - alpha_t_prev - sigma_t ** 2) - torch.sqrt(
-                (alpha_t_prev * (1 - alpha_t)) / alpha_t)) * epsilon_theta_t +
-            sigma_t * epsilon_t
+                torch.sqrt(alpha_t_prev / alpha_t) * x_t +
+                (torch.sqrt(1 - alpha_t_prev - sigma_t ** 2) - torch.sqrt(
+                    (alpha_t_prev * (1 - alpha_t)) / alpha_t)) * epsilon_theta_t +
+                sigma_t * epsilon_t
         )
         return x_t_minus_one
 
@@ -71,7 +73,8 @@ class DDIMSampler(nn.Module):
         prev_timestep = max(0, timestep - 1)
         return self.sample_one_step(sample, timestep, prev_timestep, eta=kwargs.get('eta', 0.0))
 
-    def add_noise(self, original_samples: torch.Tensor, noise: torch.Tensor, timesteps: torch.IntTensor) -> torch.Tensor:
+    def add_noise(self, original_samples: torch.Tensor, noise: torch.Tensor,
+                  timesteps: torch.IntTensor) -> torch.Tensor:
         sigmas = self.sigmas.to(device=original_samples.device, dtype=original_samples.dtype)
         schedule_timesteps = self.timesteps.to(original_samples.device)
         step_indices = [self.index_for_timestep(t, schedule_timesteps) for t in timesteps]
@@ -82,7 +85,8 @@ class DDIMSampler(nn.Module):
         noisy_samples = alpha_t * original_samples + sigma_t * noise
         return noisy_samples
 
-    def convert_model_output(self, model_output: torch.Tensor, *args, sample: torch.Tensor = None, **kwargs) -> torch.Tensor:
+    def convert_model_output(self, model_output: torch.Tensor, *args, sample: torch.Tensor = None,
+                             **kwargs) -> torch.Tensor:
         return model_output
 
     @torch.no_grad()
