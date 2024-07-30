@@ -70,8 +70,8 @@ def train(
         transform=transforms.Compose([
             # transforms.RandomHorizontalFlip(),
             transforms.ToTensor(),
-            torchvision.transforms.Resize(32),
-            # transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
+            transforms.Resize(32),
+            transforms.Lambda(lambda x: (x - 0.5) * 2)
         ]))
 
     # Show first image for debug:
