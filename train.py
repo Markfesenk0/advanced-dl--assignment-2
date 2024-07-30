@@ -136,7 +136,7 @@ def train(
 
 
 @torch.no_grad()
-def evaluate(gen_batch_size=5, n_images=25, image_size=(1, 28, 28)):
+def evaluate(gen_batch_size=5, n_images=25, image_size=(1, 32, 32)):
     device = torch.device('cuda:0')
 
     # Load ema model
