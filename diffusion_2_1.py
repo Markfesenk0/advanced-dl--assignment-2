@@ -24,9 +24,6 @@ for T in [5, 10, 50, 100]:
     pipe.vae.to("cuda")
     pipe.scheduler = ddim_sampler.to("cuda")
 
-    # Move tokenizer to GPU (if needed)
-    pipe.tokenizer.to("cuda")
-
     prompt = "a photo of an astronaut riding a horse on mars"
     generator = torch.manual_seed(42)  # For reproducibility
     image = pipe(prompt, generator=generator).images[0]
