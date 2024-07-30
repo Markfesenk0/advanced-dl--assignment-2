@@ -13,8 +13,8 @@ pipe = StableDiffusionPipeline.from_pretrained(model_id, torch_dtype=torch.float
 # Replace the scheduler with the custom DDIM sampler
 beta_start = 0.0001
 beta_end = 0.02
-T = 1000  # Number of timesteps, adjust as needed
-for T in [100, 50, 10, 5]:
+
+for T in [5, 10, 50, 100]:
     # Instantiate the custom DDIM sampler
     ddim_sampler = DDIMSampler(pipe.unet, (beta_start, beta_end), T)
 
