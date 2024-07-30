@@ -7,14 +7,8 @@ import numpy as np
 
 
 def extract(v, i, shape):
-    """
-    Get the i-th number in v, and the shape of v is mostly (T, ), the shape of i is mostly (batch_size, ).
-    equal to [v[index] for index in i]
-    """
     out = torch.gather(v, index=i, dim=0)
     out = out.to(device=i.device, dtype=torch.float32)
-
-    # reshape to (batch_size, 1, 1, 1, 1, ...) for broadcasting purposes.
     out = out.view([i.shape[0]] + [1] * (len(shape) - 1))
     return out
 
@@ -37,6 +31,9 @@ class DDIMSampler(nn.Module):
 
         self.order = order
 
+        self.timesteps = None
+        self.num_inference_steps = None
+
 
     def set_timesteps(self, num_inference_steps, device=None):
         if device is None:
@@ -52,30 +49,41 @@ class DDIMSampler(nn.Module):
         t = torch.full((x_t.shape[0],), time_step, device=x_t.device, dtype=torch.long)
         prev_t = torch.full((x_t.shape[0],), prev_time_step, device=x_t.device, dtype=torch.long)
 
-        # get current and previous alpha_cumprod
         alpha_t = extract(self.alpha_t_bar, t, x_t.shape)
         alpha_t_prev = extract(self.alpha_t_bar, prev_t, x_t.shape)
 
-        # predict noise using model
         epsilon_theta_t = self.model(x_t, t)
 
-        # calculate x_{t-1}
         sigma_t = eta * torch.sqrt((1 - alpha_t_prev) / (1 - alpha_t) * (1 - alpha_t / alpha_t_prev))
         epsilon_t = torch.randn_like(x_t)
         x_t_minus_one = (
-                torch.sqrt(alpha_t_prev / alpha_t) * x_t +
-                (torch.sqrt(1 - alpha_t_prev - sigma_t ** 2) - torch.sqrt(
-                    (alpha_t_prev * (1 - alpha_t)) / alpha_t)) * epsilon_theta_t +
-                sigma_t * epsilon_t
+            torch.sqrt(alpha_t_prev / alpha_t) * x_t +
+            (torch.sqrt(1 - alpha_t_prev - sigma_t ** 2) - torch.sqrt(
+                (alpha_t_prev * (1 - alpha_t)) / alpha_t)) * epsilon_theta_t +
+            sigma_t * epsilon_t
         )
         return x_t_minus_one
 
-    def step(self, latents, t, **kwargs):
-        prev_t = max(0, t - 1)
-        return self.sample_one_step(latents, t, prev_t, eta=kwargs.get('eta', 0.0))
-
     def scale_model_input(self, sample: torch.Tensor, *args, **kwargs) -> torch.Tensor:
         return sample
+
+    def step(self, model_output: torch.Tensor, timestep: int, sample: torch.Tensor, generator=None, **kwargs):
+        prev_timestep = max(0, timestep - 1)
+        return self.sample_one_step(sample, timestep, prev_timestep, eta=kwargs.get('eta', 0.0))
+
+    def add_noise(self, original_samples: torch.Tensor, noise: torch.Tensor, timesteps: torch.IntTensor) -> torch.Tensor:
+        sigmas = self.sigmas.to(device=original_samples.device, dtype=original_samples.dtype)
+        schedule_timesteps = self.timesteps.to(original_samples.device)
+        step_indices = [self.index_for_timestep(t, schedule_timesteps) for t in timesteps]
+        sigma = sigmas[step_indices].flatten()
+        while len(sigma.shape) < len(original_samples.shape):
+            sigma = sigma.unsqueeze(-1)
+        alpha_t, sigma_t = self._sigma_to_alpha_sigma_t(sigma)
+        noisy_samples = alpha_t * original_samples + sigma_t * noise
+        return noisy_samples
+
+    def convert_model_output(self, model_output: torch.Tensor, *args, sample: torch.Tensor = None, **kwargs) -> torch.Tensor:
+        return model_output
 
     @torch.no_grad()
     def forward(self, x_t, eta=0.0, only_return_x_0: bool = True, interval: int = 1):
@@ -96,7 +104,7 @@ class DDIMSampler(nn.Module):
         # # previous sequence
         # time_steps_prev = np.concatenate([[0], time_steps[:-1]])
 
-        x = [x_t * self.init_noise_sigma]  # Use init_noise_sigma to scale initial noise
+        x = [x_t * self.init_noise_sigma]
         with tqdm(reversed(range(steps)), colour="#6565b5", total=steps) as sampling_steps:
             for i in sampling_steps:
                 x_t = self.sample_one_step(x_t, time_steps[i], time_steps_prev[i], eta)
