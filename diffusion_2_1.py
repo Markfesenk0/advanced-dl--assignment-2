@@ -18,10 +18,14 @@ for T in [5, 10, 50, 100]:
     # Instantiate the custom DDIM sampler
     ddim_sampler = DDIMSampler(pipe.unet, (beta_start, beta_end), T)
 
-    # Replace the scheduler in the pipeline
+    # Move the pipeline components to GPU
     pipe.unet.to("cuda")
-    ddim_sampler.to("cuda")
-    pipe.scheduler = ddim_sampler
+    pipe.text_encoder.to("cuda")
+    pipe.vae.to("cuda")
+    pipe.scheduler = ddim_sampler.to("cuda")
+
+    # Move tokenizer to GPU (if needed)
+    pipe.tokenizer.to("cuda")
 
     prompt = "a photo of an astronaut riding a horse on mars"
     generator = torch.manual_seed(42)  # For reproducibility
