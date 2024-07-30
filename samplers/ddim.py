@@ -20,7 +20,7 @@ def extract(v, i, shape):
 
 
 class DDIMSampler(nn.Module):
-    def __init__(self, model, beta: Tuple[int, int], T: int, init_noise_sigma=1.0):
+    def __init__(self, model, beta: Tuple[int, int], T: int, init_noise_sigma=1.0, order=1):
         super().__init__()
         self.model = model
         self.T = T
@@ -34,6 +34,9 @@ class DDIMSampler(nn.Module):
 
         # Add init_noise_sigma attribute
         self.init_noise_sigma = init_noise_sigma
+
+        self.order = order
+
 
     def set_timesteps(self, num_inference_steps, device=None):
         if device is None:
