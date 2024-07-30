@@ -10,7 +10,6 @@ pipe = StableDiffusionPipeline.from_pretrained(model_id, torch_dtype=torch.float
 # pipe.scheduler = DPMSolverMultistepScheduler.from_config(pipe.scheduler.config)
 
 # Replace the scheduler with the custom DDIM sampler
-# Replace the scheduler with the custom DDIM sampler
 beta_start = 0.0001
 beta_end = 0.02
 
@@ -22,7 +21,12 @@ for T in [5, 10, 50, 100]:
     pipe.unet.to("cuda")
     pipe.text_encoder.to("cuda")
     pipe.vae.to("cuda")
-    pipe.scheduler = ddim_sampler.to("cuda")
+    ddim_sampler.to("cuda")
+
+    ddim_sampler.set_timesteps(num_inference_steps=T, device="cuda")
+
+    # Replace the scheduler in the pipeline
+    pipe.scheduler = ddim_sampler
 
     prompt = "a photo of an astronaut riding a horse on mars"
     generator = torch.manual_seed(42)  # For reproducibility

@@ -39,7 +39,7 @@ class DDIMSampler(nn.Module):
         self.num_inference_steps = num_inference_steps
         self.timesteps = torch.linspace(
             0, self.T - 1, steps=num_inference_steps, device=device, dtype=torch.long
-        )
+        ).to(device)
 
     @torch.no_grad()
     def sample_one_step(self, x_t, time_step: int, prev_time_step: int, eta: float):
