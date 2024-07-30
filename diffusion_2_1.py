@@ -19,8 +19,9 @@ for T in [5, 10, 50, 100]:
     ddim_sampler = DDIMSampler(pipe.unet, (beta_start, beta_end), T)
 
     # Replace the scheduler in the pipeline
+    pipe.unet.to("cuda")
+    ddim_sampler.to("cuda")
     pipe.scheduler = ddim_sampler
-    pipe = pipe.to("cuda")
 
     prompt = "a photo of an astronaut riding a horse on mars"
     generator = torch.manual_seed(42)  # For reproducibility

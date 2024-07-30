@@ -30,6 +30,8 @@ class DDIMSampler(nn.Module):
         # calculate the cumulative product of $\alpha$ , named $\bar{\alpha_t}$ in paper
         alpha_t = 1.0 - beta_t
         self.register_buffer("alpha_t_bar", torch.cumprod(alpha_t, dim=0))
+        # Add dtype attribute
+        self.dtype = torch.float32
 
     @torch.no_grad()
     def sample_one_step(self, x_t, time_step: int, prev_time_step: int, eta: float):
