@@ -1,4 +1,3 @@
-from einops import rearrange
 import torch
 from torch import nn
 from models.utils import DownSample, Attention, UpSample, Norm, TimeEmbedding, extract
@@ -135,6 +134,7 @@ class UNet(nn.Module):
         for up in self.ups:
             if isinstance(up, ResBlock):
                 analogue_h = hs.pop()
+                print(h.shape, analogue_h.shape)
                 h = torch.cat([h, analogue_h], dim=1)
             h = up(h, t_emb)
 

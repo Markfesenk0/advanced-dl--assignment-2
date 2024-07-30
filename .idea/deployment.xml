@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
-  <component name="PublishConfigData" remoteFilesAllowedToDisappearOnAutoupload="false">
+  <component name="PublishConfigData" autoUpload="Always" serverName="markfesenko@c-004.cs.tau.ac.il:22 password (7)" remoteFilesAllowedToDisappearOnAutoupload="false" confirmBeforeUploading="false">
+    <option name="confirmBeforeUploading" value="false" />
     <serverData>
       <paths name="markf@34.165.164.27:22 key">
         <serverdata>
@@ -58,6 +59,14 @@
           </mappings>
         </serverdata>
       </paths>
+      <paths name="markfesenko@c-004.cs.tau.ac.il:22 password (7)">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/home/sharifm/students/markfesenko/projects/DLAT-HW2" local="$PROJECT_DIR$" />
+          </mappings>
+        </serverdata>
+      </paths>
     </serverData>
+    <option name="myAutoUpload" value="ALWAYS" />
   </component>
 </project>

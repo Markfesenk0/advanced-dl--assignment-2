@@ -3,6 +3,7 @@
 #SBATCH --job-name=ddpm
 #SBATCH --output=logs/ddpm.out # redirect stdout
 #SBATCH --error=logs/ddpm.err # redirect stderr
+#SBATCH --account=gpu-research
 #SBATCH --partition=killable
 #SBATCH --time=1300 # max time (minutes)
 #SBATCH --signal=USR1@120 # how to end job when time's up

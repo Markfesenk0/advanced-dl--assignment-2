@@ -38,7 +38,6 @@ def warmup_lr(warmup_param, step):
 
 # train logic:
 def train(
-
         # (UNet) Architecture parameters:
         hid_channels_init: int = 128,  # base channel of UNet
         ch_mult: int = (1, 2, 2, 2),  # channel multiplier
@@ -148,7 +147,7 @@ def evaluate(gen_batch_size=5, n_images=25, image_size=(1, 28, 28)):
     ckpt = torch.load(os.path.join('./logs/', 'ckpt.pt'))
 
     sampler = GaussianDiffusionSampler(
-        ema_model, img_size=image_size[1], **ckpt['sampler_kwargs']['mean_type']).to(device)
+        ema_model, img_size=image_size[1], **ckpt['sampler_kwargs']).to(device)
 
     # Sample image with model
     images = []

@@ -130,3 +130,12 @@ class DownSample(nn.Module):
     def forward(self, x, temb=None):
         x = self.main(x)
         return x
+
+
+def extract(v, t, x_shape):
+    """
+    Extract some coefficients at specified timesteps, then reshape to
+    [batch_size, 1, 1, 1, 1, ...] for broadcasting purposes.
+    """
+    out = torch.gather(v, index=t, dim=0).float()
+    return out.view([t.shape[0]] + [1] * (len(x_shape) - 1))
