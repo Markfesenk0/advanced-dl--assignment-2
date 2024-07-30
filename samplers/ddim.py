@@ -47,7 +47,7 @@ class DDIMSampler(nn.Module):
         ).to(device)
 
     @torch.no_grad()
-    def sample_one_step(self, x_t, time_step: int, prev_time_step: int, encoder_hidden_states: torch.Tensor, eta: float):
+    def sample_one_step(self, x_t, time_step: int, prev_time_step: int, eta: float, encoder_hidden_states: torch.Tensor=None):
         t = torch.full((x_t.shape[0],), time_step, device=x_t.device, dtype=torch.long)
         prev_t = torch.full((x_t.shape[0],), prev_time_step, device=x_t.device, dtype=torch.long)
 
@@ -69,9 +69,9 @@ class DDIMSampler(nn.Module):
     def scale_model_input(self, sample: torch.Tensor, *args, **kwargs) -> torch.Tensor:
         return sample
 
-    def step(self, model_output: torch.Tensor, timestep: int, sample: torch.Tensor, encoder_hidden_states: torch.Tensor, generator=None, **kwargs):
+    def step(self, model_output: torch.Tensor, timestep: int, sample: torch.Tensor, generator=None, **kwargs):
         prev_timestep = max(0, timestep - 1)
-        return self.sample_one_step(sample, timestep, prev_timestep, encoder_hidden_states, eta=kwargs.get('eta', 0.0))
+        return self.sample_one_step(sample, timestep, prev_timestep, eta=kwargs.get('eta', 0.0))
 
     def add_noise(self, original_samples: torch.Tensor, noise: torch.Tensor,
                   timesteps: torch.IntTensor) -> torch.Tensor:
@@ -111,7 +111,7 @@ class DDIMSampler(nn.Module):
         x = [x_t * self.init_noise_sigma]
         with tqdm(reversed(range(steps)), colour="#6565b5", total=steps) as sampling_steps:
             for i in sampling_steps:
-                x_t = self.sample_one_step(x_t, time_steps[i], time_steps_prev[i], encoder_hidden_states, eta)
+                x_t = self.sample_one_step(x_t, time_steps[i], time_steps_prev[i], eta, encoder_hidden_states)
 
                 if not only_return_x_0 and ((steps - i) % interval == 0 or i == 0):
                     x.append(torch.clip(x_t, -1.0, 1.0))
