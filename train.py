@@ -8,6 +8,7 @@ from torchvision.transforms import transforms
 from tqdm import trange
 
 from models.unet import DDPMTrainObjective, UNet
+from samplers.ddim_v2 import DDIMSampler
 from samplers.vannila import GaussianDiffusionSampler
 
 import logging
@@ -128,26 +129,29 @@ def train(
                 'sampler_kwargs': dict(T=T, beta_1=beta_1, beta_T=beta_T,
                                        mean_type=mean_type, var_type=var_type),
             }
-            torch.save(ckpt, os.path.join('./logs/', 'ckpt.pt'))
-            torch.save(ema_model, os.path.join('./logs/', 'ema_model.pt'))
+            torch.save(ckpt, os.path.join('/home/sharifm/students/markfesenko/projects/DLAT-HW2/logs/', 'ckpt.pt'))
+            torch.save(ema_model, os.path.join('/home/sharifm/students/markfesenko/projects/DLAT-HW2/logs/', 'ema_model.pt'))
 
             # Evaluate model
             evaluate(image_size=input_shape)
 
 
 @torch.no_grad()
-def evaluate(gen_batch_size=5, n_images=25, image_size=(1, 32, 32)):
+def evaluate(gen_batch_size=5, n_images=25, image_size=(1, 32, 32), sampler="DDPM"):
     device = torch.device('cuda:0')
 
     # Load ema model
-    ema_model = torch.load(os.path.join('./logs/', 'ema_model.pt'))
+    ema_model = torch.load(os.path.join('/home/sharifm/students/markfesenko/projects/DLAT-HW2/logs/', 'ema_model.pt'))
     ema_model.eval()
 
     # Load checkpoint
-    ckpt = torch.load(os.path.join('./logs/', 'ckpt.pt'))
-
-    sampler = GaussianDiffusionSampler(
-        ema_model, img_size=image_size[1], **ckpt['sampler_kwargs']).to(device)
+    ckpt = torch.load(os.path.join('/home/sharifm/students/markfesenko/projects/DLAT-HW2/logs/', 'ckpt.pt'))
+    if sampler == "DDPM":
+        sampler = GaussianDiffusionSampler(
+            ema_model, img_size=image_size[1], **ckpt['sampler_kwargs']).to(device)
+    elif sampler == "DDIM":
+        sampler = DDIMSampler(
+            ema_model, **ckpt['sampler_kwargs']).to(device)
 
     # Sample image with model
     images = []
@@ -162,9 +166,9 @@ def evaluate(gen_batch_size=5, n_images=25, image_size=(1, 32, 32)):
 
     # [Qualitative]: Saved generated images
     torchvision.utils.save_image(images,
-                                 os.path.join('./logs/', 'gen_samples.png'), nrow=gen_batch_size)
+                                 os.path.join('/home/sharifm/students/markfesenko/projects/DLAT-HW2/logs/', 'gen_samples.png'), nrow=gen_batch_size)
 
 
 if __name__ == '__main__':
-    train()
-    evaluate()
+    # train()
+    evaluate(sampler="DDIM")

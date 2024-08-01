@@ -20,13 +20,13 @@ def extract(v, i, shape):
 
 
 class DDIMSampler(nn.Module):
-    def __init__(self, model, beta: Tuple[int, int], T: int):
+    def __init__(self, model, beta_1, beta_T, T):
         super().__init__()
         self.model = model
         self.T = T
 
         # generate T steps of beta
-        beta_t = torch.linspace(*beta, T, dtype=torch.float32)
+        beta_t = torch.linspace(beta_1, beta_T, T, dtype=torch.float32)
         # calculate the cumulative product of $\alpha$ , named $\bar{\alpha_t}$ in paper
         alpha_t = 1.0 - beta_t
         self.register_buffer("alpha_t_bar", torch.cumprod(alpha_t, dim=0))
@@ -88,7 +88,7 @@ class DDIMSampler(nn.Module):
         time_steps_prev = np.concatenate([[0], time_steps[:-1]])
 
         x = [x_t]
-        with tqdm(reversed(range(0, steps)), colour="#6565b5", total=steps) as sampling_steps:
+        with tqdm(reversed(range(self.T)), colour="#6565b5", total=steps) as sampling_steps:
             for i in sampling_steps:
                 x_t = self.sample_one_step(x_t, time_steps[i], time_steps_prev[i], eta)
 
