@@ -137,7 +137,7 @@ def train(
 
 
 @torch.no_grad()
-def evaluate(gen_batch_size=5, n_images=25, image_size=(1, 32, 32), sampler="DDPM"):
+def evaluate(gen_batch_size=5, n_images=25, image_size=(1, 32, 32), sampler_type="DDPM"):
     device = torch.device('cuda:0')
 
     # Load ema model
@@ -146,10 +146,10 @@ def evaluate(gen_batch_size=5, n_images=25, image_size=(1, 32, 32), sampler="DDP
 
     # Load checkpoint
     ckpt = torch.load(os.path.join('/home/sharifm/students/markfesenko/projects/DLAT-HW2/logs/', 'ckpt.pt'))
-    if sampler == "DDPM":
+    if sampler_type == "DDPM":
         sampler = GaussianDiffusionSampler(
             ema_model, img_size=image_size[1], **ckpt['sampler_kwargs']).to(device)
-    elif sampler == "DDIM":
+    elif sampler_type == "DDIM":
         sampler = DDIMSampler(
             ema_model, **ckpt['sampler_kwargs']).to(device)
 
@@ -172,4 +172,4 @@ def evaluate(gen_batch_size=5, n_images=25, image_size=(1, 32, 32), sampler="DDP
 
 if __name__ == '__main__':
     # train()
-    evaluate(sampler="DDIM")
+    evaluate(sampler_type="DDIM")
