@@ -156,7 +156,7 @@ def evaluate(gen_batch_size=5, n_images=25, image_size=(1, 32, 32), sampler_type
     # Sample image with model
     images = []
     for i in range(n_images // gen_batch_size):
-        print(f'working on batch {i} out of n_images // gen_batch_size')
+        print(f'working on batch {i} out of {n_images // gen_batch_size}')
         x_T = torch.randn((gen_batch_size, *image_size))
         batch_images = sampler(x_T.to(device)).detach().cpu()
         images.append(batch_images)
