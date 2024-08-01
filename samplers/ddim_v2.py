@@ -88,7 +88,7 @@ class DDIMSampler(nn.Module):
         time_steps_prev = np.concatenate([[0], time_steps[:-1]])
 
         x = [x_t]
-        with tqdm(reversed(range(self.T)), colour="#6565b5", total=steps) as sampling_steps:
+        with tqdm(reversed(range(steps)), colour="#6565b5", total=steps) as sampling_steps:
             for i in sampling_steps:
                 x_t = self.sample_one_step(x_t, time_steps[i], time_steps_prev[i], eta)
 
