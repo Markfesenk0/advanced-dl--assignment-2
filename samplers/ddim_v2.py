@@ -20,7 +20,7 @@ def extract(v, i, shape):
 
 
 class DDIMSampler(nn.Module):
-    def __init__(self, model, beta_1, beta_T, T):
+    def __init__(self, model, beta_1, beta_T, T, mean_type='eps', var_type='fixedlarge'):
         super().__init__()
         self.model = model
         self.T = T
