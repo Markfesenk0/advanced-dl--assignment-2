@@ -129,24 +129,24 @@ def train(
                 'sampler_kwargs': dict(T=T, beta_1=beta_1, beta_T=beta_T,
                                        mean_type=mean_type, var_type=var_type),
             }
-            torch.save(ckpt, os.path.join('/home/sharifm/students/markfesenko/projects/DLAT-HW2/logs/', 'ckpt.pt'))
+            torch.save(ckpt, os.path.join(logs_main_dir, 'ckpt.pt'))
             torch.save(ema_model,
-                       os.path.join('/home/sharifm/students/markfesenko/projects/DLAT-HW2/logs/', 'ema_model.pt'))
+                       os.path.join(logs_main_dir, 'ema_model.pt'))
 
             # Evaluate model
             evaluate(image_size=input_shape)
 
 
 @torch.no_grad()
-def evaluate(gen_batch_size=5, n_images=25, image_size=(1, 32, 32), sampler_type="DDPM", sampler_kwargs=None):
+def evaluate(gen_batch_size=5, n_images=25, image_size=(1, 32, 32), sampler_type="DDPM", sampler_kwargs: dict = None):
     device = torch.device('cuda:0')
 
     # Load ema model
-    ema_model = torch.load(os.path.join('/home/sharifm/students/markfesenko/projects/DLAT-HW2/logs/', 'ema_model.pt'))
+    ema_model = torch.load(os.path.join(logs_main_dir, 'ema_model.pt'))
     ema_model.eval()
 
     if sampler_kwargs is None:
-        ckpt = torch.load(os.path.join('/home/sharifm/students/markfesenko/projects/DLAT-HW2/logs/', 'ckpt.pt'))
+        ckpt = torch.load(os.path.join(logs_main_dir, 'ckpt.pt'))
         sampler_kwargs = ckpt['sampler_kwargs']
     if sampler_type == "DDPM":
         sampler = GaussianDiffusionSampler(ema_model, img_size=image_size[1], **sampler_kwargs).to(device)
@@ -177,9 +177,10 @@ if __name__ == '__main__':
     beta_T = 0.02  # end beta value
     mean_type = 'epsilon'  # predict variable
     var_type = 'fixedlarge'  # variance type
+    logs_main_dir = '/home/sharifm/students/markfesenko/projects/DLAT-HW2/logs/'
 
     sampler_kwargs = dict(T=T, beta_1=beta_1, beta_T=beta_T,
-                          mean_type=mean_type, var_type=var_type),
+                          mean_type=mean_type, var_type=var_type)
 
     # train()
     evaluate(sampler_type="DDIM", sampler_kwargs=sampler_kwargs)
