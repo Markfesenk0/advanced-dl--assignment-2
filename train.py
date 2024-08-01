@@ -93,7 +93,7 @@ def train(
         num_res_blocks=num_res_blocks, dropout=dropout)
     ema_model = copy.deepcopy(net_model).to(device)
     optim = torch.optim.Adam(net_model.parameters(), lr=lr)
-    sched = torch.optim.lr_scheduler.LambdaLR(   # TODO what scheduler to use? (refer to official impl)
+    sched = torch.optim.lr_scheduler.LambdaLR(  # TODO what scheduler to use? (refer to official impl)
         optim,
         lr_lambda=partial(warmup_lr, warmup_param))
     model_objective = DDPMTrainObjective(net_model, beta_1, beta_T, T).to(device)
@@ -130,28 +130,28 @@ def train(
                                        mean_type=mean_type, var_type=var_type),
             }
             torch.save(ckpt, os.path.join('/home/sharifm/students/markfesenko/projects/DLAT-HW2/logs/', 'ckpt.pt'))
-            torch.save(ema_model, os.path.join('/home/sharifm/students/markfesenko/projects/DLAT-HW2/logs/', 'ema_model.pt'))
+            torch.save(ema_model,
+                       os.path.join('/home/sharifm/students/markfesenko/projects/DLAT-HW2/logs/', 'ema_model.pt'))
 
             # Evaluate model
             evaluate(image_size=input_shape)
 
 
 @torch.no_grad()
-def evaluate(gen_batch_size=5, n_images=25, image_size=(1, 32, 32), sampler_type="DDPM"):
+def evaluate(gen_batch_size=5, n_images=25, image_size=(1, 32, 32), sampler_type="DDPM", sampler_kwargs=None):
     device = torch.device('cuda:0')
 
     # Load ema model
     ema_model = torch.load(os.path.join('/home/sharifm/students/markfesenko/projects/DLAT-HW2/logs/', 'ema_model.pt'))
     ema_model.eval()
 
-    # Load checkpoint
-    ckpt = torch.load(os.path.join('/home/sharifm/students/markfesenko/projects/DLAT-HW2/logs/', 'ckpt.pt'))
+    if sampler_kwargs is None:
+        ckpt = torch.load(os.path.join('/home/sharifm/students/markfesenko/projects/DLAT-HW2/logs/', 'ckpt.pt'))
+        sampler_kwargs = ckpt['sampler_kwargs']
     if sampler_type == "DDPM":
-        sampler = GaussianDiffusionSampler(
-            ema_model, img_size=image_size[1], **ckpt['sampler_kwargs']).to(device)
+        sampler = GaussianDiffusionSampler(ema_model, img_size=image_size[1], **sampler_kwargs).to(device)
     elif sampler_type == "DDIM":
-        sampler = DDIMSampler(
-            ema_model, **ckpt['sampler_kwargs']).to(device)
+        sampler = DDIMSampler(ema_model, **sampler_kwargs).to(device)
 
     # Sample image with model
     images = []
@@ -167,9 +167,19 @@ def evaluate(gen_batch_size=5, n_images=25, image_size=(1, 32, 32), sampler_type
 
     # [Qualitative]: Saved generated images
     torchvision.utils.save_image(images,
-                                 os.path.join('/home/sharifm/students/markfesenko/projects/DLAT-HW2/logs/', 'gen_samples.png'), nrow=gen_batch_size)
+                                 os.path.join('/home/sharifm/students/markfesenko/projects/DLAT-HW2/logs/',
+                                              f'gen_samples_{sampler_type}.png'), nrow=gen_batch_size)
 
 
 if __name__ == '__main__':
+    T = 1000  # number of time steps
+    beta_1 = 1e-4  # start beta value
+    beta_T = 0.02  # end beta value
+    mean_type = 'epsilon'  # predict variable
+    var_type = 'fixedlarge'  # variance type
+
+    sampler_kwargs = dict(T=T, beta_1=beta_1, beta_T=beta_T,
+                          mean_type=mean_type, var_type=var_type),
+
     # train()
-    evaluate(sampler_type="DDIM")
+    evaluate(sampler_type="DDIM", sampler_kwargs=sampler_kwargs)
