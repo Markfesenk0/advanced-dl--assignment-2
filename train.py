@@ -167,7 +167,7 @@ def evaluate(gen_batch_size=5, n_images=25, image_size=(1, 32, 32), sampler_type
 
     # [Qualitative]: Saved generated images
     torchvision.utils.save_image(images,
-                                 os.path.join('/home/sharifm/students/markfesenko/projects/DLAT-HW2/logs/',
+                                 os.path.join('/home/sharifm/students/benshapira/advanced-dl--assignment-2/logs/',
                                               f'gen_samples_{sampler_type}.png'), nrow=gen_batch_size)
 
 
