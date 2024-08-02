@@ -19,6 +19,6 @@ for step in [5, 10, 50, 100]:
         pipe = pipe.to("cuda")
 
         prompt = "a photo of an Israely swimmer dunking a basketball in the olympics"
-        image = pipe(prompt).images[0]
+        image = pipe(prompt, num_inference_steps=step).images[0]
 
         image.save(f"/home/sharifm/students/benshapira/advanced-dl--assignment-2/stable-diffusion-2-1/swimmer_{sampler_type}_steps{step}.png")
