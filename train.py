@@ -8,7 +8,7 @@ from torchvision.transforms import transforms
 from tqdm import trange
 
 from models.unet import DDPMTrainObjective, UNet
-from samplers.ddim_v2 import DDIMSampler
+from samplers.ddim import DDIMSampler
 from samplers.vannila import GaussianDiffusionSampler
 
 import logging
@@ -183,4 +183,4 @@ if __name__ == '__main__':
                           mean_type=mean_type, var_type=var_type)
 
     # train()
-    evaluate(sampler_type="DDIM", sampler_kwargs=sampler_kwargs)
+    evaluate(sampler_type="DDPM", sampler_kwargs=sampler_kwargs)
