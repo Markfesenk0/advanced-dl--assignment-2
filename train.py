@@ -168,12 +168,12 @@ def evaluate(gen_batch_size=5, n_images=25, image_size=(1, 32, 32), sampler_type
     # [Qualitative]: Saved generated images
     torchvision.utils.save_image(images,
                                  os.path.join('/home/sharifm/students/benshapira/advanced-dl--assignment-2/logs/',
-                                              f'gen_samples_{sampler_type}.png'), nrow=gen_batch_size)
+                                              f'gen_samples_{sampler_type}2.png'), nrow=gen_batch_size)
 
 
 if __name__ == '__main__':
-    T = 1000  # number of time steps
-    beta_1 = 1e-4  # start beta value
+    T = 200  # number of time steps
+    beta_1 = 0.0001  # start beta value
     beta_T = 0.02  # end beta value
     mean_type = 'epsilon'  # predict variable
     var_type = 'fixedlarge'  # variance type
@@ -184,3 +184,4 @@ if __name__ == '__main__':
 
     # train()
     evaluate(sampler_type="DDPM", sampler_kwargs=sampler_kwargs)
+    evaluate(sampler_type="DDIM", sampler_kwargs=sampler_kwargs)
