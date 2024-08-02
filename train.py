@@ -189,7 +189,7 @@ if __name__ == '__main__':
                           mean_type=mean_type, var_type=var_type)
     for steps in [25, 50, 70, 100, 150]:
         for eta in [0.0, 0.1, 0.2]:
-            for method in ['liner', 'quadratic']:
+            for method in ['linear', 'quadratic']:
                 ddim_kwargs = dict(steps=steps, method=method, eta=eta)
                 # train()
                 # evaluate(sampler_type="DDPM", sampler_kwargs=sampler_kwargs)
