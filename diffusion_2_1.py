@@ -1,34 +1,24 @@
 import torch
-from diffusers import StableDiffusionPipeline, DPMSolverMultistepScheduler
-
-from samplers.ddim import DDIMSampler
+from diffusers import StableDiffusionPipeline, DPMSolverMultistepScheduler, DDIMScheduler, DDPMScheduler
 
 model_id = "stabilityai/stable-diffusion-2-1"
 
 # Use the DPMSolverMultistepScheduler (DPM-Solver++) scheduler here instead
 pipe = StableDiffusionPipeline.from_pretrained(model_id, torch_dtype=torch.float16)
-# pipe.scheduler = DPMSolverMultistepScheduler.from_config(pipe.scheduler.config)
+for step in [5, 10, 50, 100]:
+    for sampler_type in ['DDIM', 'DDPM', 'DPMSolver++', 'fastDPM']:
+        if sampler_type == 'DPMSolver++':
+            pipe.scheduler = DPMSolverMultistepScheduler.from_config(pipe.scheduler.config)
+        elif sampler_type == 'DDIM':
+            pipe.scheduler = DDIMScheduler.from_config(pipe.scheduler.config)
+        elif sampler_type == 'DDPM':
+            pipe.scheduler = DDPMScheduler.from_config(pipe.scheduler.config)
+        else:
+            pipe.scheduler = None
 
-# Replace the scheduler with the custom DDIM sampler
-beta_start = 0.0001
-beta_end = 0.02
+        pipe = pipe.to("cuda")
 
-for T in [5, 10, 50, 100]:
-    # Instantiate the custom DDIM sampler
-    ddim_sampler = DDIMSampler(pipe.unet, (beta_start, beta_end), T)
+        prompt = "a photo of an Israely swimmer dunking a basketball in the olympics"
+        image = pipe(prompt).images[0]
 
-    # Move the pipeline components to GPU
-    pipe.scheduler = ddim_sampler
-    pipe = pipe.to("cuda")
-    pipe.unet.to("cuda")
-    pipe.text_encoder.to("cuda")
-    pipe.vae.to("cuda")
-    ddim_sampler.to("cuda")
-
-    ddim_sampler.set_timesteps(num_inference_steps=T, device="cuda")
-
-    prompt = "a photo of an astronaut riding a horse on mars"
-    generator = torch.manual_seed(42)  # For reproducibility
-    image = pipe(prompt, generator=generator).images[0]
-
-    image.save(f"/home/sharifm/students/benshapira/advanced-dl--assignment-2/stable-diffusion-2-1/astronaut_rides_horse_T_{T}.png")
+        image.save(f"/home/sharifm/students/benshapira/advanced-dl--assignment-2/stable-diffusion-2-1/swimmer_{sampler_type}_steps{step}.png")
