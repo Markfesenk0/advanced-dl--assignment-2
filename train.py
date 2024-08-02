@@ -138,7 +138,7 @@ def train(
 
 
 @torch.no_grad()
-def evaluate(gen_batch_size=5, n_images=25, image_size=(1, 32, 32), sampler_type="DDPM", sampler_kwargs: dict = None):
+def evaluate(gen_batch_size=5, n_images=25, image_size=(1, 32, 32), sampler_type="DDPM", sampler_kwargs: dict = None, ddim_kwargs=None):
     device = torch.device('cuda:0')
 
     # Load ema model
@@ -158,7 +158,10 @@ def evaluate(gen_batch_size=5, n_images=25, image_size=(1, 32, 32), sampler_type
     for i in range(n_images // gen_batch_size):
         print(f'working on batch {i} out of {n_images // gen_batch_size}')
         x_T = torch.randn((gen_batch_size, *image_size))
-        batch_images = sampler(x_T.to(device)).detach().cpu()
+        if sampler_type == "DDIM":
+            batch_images = sampler(x_T.to(device), **ddim_kwargs).detach().cpu()
+        else:
+            batch_images = sampler(x_T.to(device)).detach().cpu()
         images.append(batch_images)
     images = torch.cat(images, dim=0)
 
@@ -166,9 +169,12 @@ def evaluate(gen_batch_size=5, n_images=25, image_size=(1, 32, 32), sampler_type
     # (IS, IS_std), FID = get_inception_and_fid_score(...)
 
     # [Qualitative]: Saved generated images
+    img_name = f'gen_samples_{sampler_type}.png'
+    if sampler_type == "DDIM":
+        img_name = f'gen_samples_{sampler_type}_steps_{ddim_kwargs["steps"]}_method_{ddim_kwargs["method"]}_eta_{ddim_kwargs["eta"]}.png'
     torchvision.utils.save_image(images,
                                  os.path.join('/home/sharifm/students/benshapira/advanced-dl--assignment-2/logs/',
-                                              f'gen_samples_{sampler_type}2.png'), nrow=gen_batch_size)
+                                              img_name), nrow=gen_batch_size)
 
 
 if __name__ == '__main__':
@@ -181,7 +187,10 @@ if __name__ == '__main__':
 
     sampler_kwargs = dict(T=T, beta_1=beta_1, beta_T=beta_T,
                           mean_type=mean_type, var_type=var_type)
-
-    # train()
-    evaluate(sampler_type="DDPM", sampler_kwargs=sampler_kwargs)
-    evaluate(sampler_type="DDIM", sampler_kwargs=sampler_kwargs)
+    for steps in [25, 50, 70, 100, 150]:
+        for eta in [0.0, 0.1, 0.2]:
+            for method in ['liner', 'quadratic']:
+                ddim_kwargs = dict(steps=steps, method=method, eta=eta)
+                # train()
+                # evaluate(sampler_type="DDPM", sampler_kwargs=sampler_kwargs)
+                evaluate(sampler_type="DDIM", sampler_kwargs=sampler_kwargs, ddim_kwargs=ddim_kwargs)
