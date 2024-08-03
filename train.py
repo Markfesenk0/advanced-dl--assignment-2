@@ -11,7 +11,7 @@ from tqdm import trange
 from models.unet import DDPMTrainObjective, UNet
 from samplers.DPMSolverPP import NoiseScheduleVP, model_wrapper, DPM_Solver
 from samplers.ddim import DDIMSampler
-from samplers.vannila import GaussianDiffusionSampler
+from samplers.vannila import DDPMSampler
 
 import logging
 
@@ -151,7 +151,7 @@ def evaluate(gen_batch_size=5, n_images=25, image_size=(1, 32, 32), sampler_type
         ckpt = torch.load(os.path.join(logs_main_dir, 'ckpt.pt'))
         sampler_kwargs = ckpt['sampler_kwargs']
     if sampler_type == "DDPM":
-        sampler = GaussianDiffusionSampler(ema_model, img_size=image_size[1], **sampler_kwargs).to(device)
+        sampler = DDPMSampler(ema_model, img_size=image_size[1], **sampler_kwargs).to(device)
     elif sampler_type == "DDIM":
         sampler = DDIMSampler(ema_model, **sampler_kwargs).to(device)
     elif sampler_type == "DPM++":
@@ -189,5 +189,5 @@ if __name__ == '__main__':
     sampler_kwargs = dict(T=T, beta_1=beta_1, beta_T=beta_T,
                           mean_type=mean_type, var_type=var_type)
     # train()
-    # evaluate(sampler_type="DDPM", sampler_kwargs=sampler_kwargs)
-    evaluate(sampler_type="DDIM", sampler_kwargs=sampler_kwargs)
+    evaluate(sampler_type="DDPM", sampler_kwargs=sampler_kwargs)
+    # evaluate(sampler_type="DDIM", sampler_kwargs=sampler_kwargs)
