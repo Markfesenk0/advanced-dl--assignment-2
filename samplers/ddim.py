@@ -43,18 +43,12 @@ class DDIMSampler(nn.Module):
         return x_t_minus_one
 
     @torch.no_grad()
-    def forward(self, x_t, steps=25, method="linear", eta=0.1, only_return_x_0=True, interval=1):
+    def forward(self, x_t, steps=25, eta=0.1, only_return_x_0=False, interval=1):
         """
         Sample from the model.
         """
-        if method == "linear":
-            step_intervals = self.T // steps
-            time_steps = np.arange(0, self.T, step_intervals)
-        elif method == "quadratic":
-            time_steps = (np.linspace(0, np.sqrt(self.T * 0.8), steps) ** 2).astype(np.int)
-        else:
-            raise NotImplementedError(f"Sampling method {method} is not implemented!")
-
+        step_intervals = self.T // steps
+        time_steps = np.arange(0, self.T, step_intervals)
         time_steps = time_steps + 1
         time_steps_prev = np.concatenate([[0], time_steps[:-1]])
 

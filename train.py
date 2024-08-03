@@ -189,5 +189,5 @@ if __name__ == '__main__':
     sampler_kwargs = dict(T=T, beta_1=beta_1, beta_T=beta_T,
                           mean_type=mean_type, var_type=var_type)
     # train()
-    evaluate(sampler_type="DDPM", sampler_kwargs=sampler_kwargs)
-    # evaluate(sampler_type="DDIM", sampler_kwargs=sampler_kwargs)
+    # evaluate(sampler_type="DDPM", sampler_kwargs=sampler_kwargs)
+    evaluate(sampler_type="DDIM", sampler_kwargs=sampler_kwargs)
