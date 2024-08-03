@@ -43,7 +43,7 @@ class DDIMSampler(nn.Module):
         return x_t_minus_one
 
     @torch.no_grad()
-    def forward(self, x_t, steps=25, eta=0.1, only_return_x_0=False, interval=1):
+    def forward(self, x_t, steps=25, eta=0.1, only_return_x_0=True, interval=1):
         """
         Sample from the model.
         """
