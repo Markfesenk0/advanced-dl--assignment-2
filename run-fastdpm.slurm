@@ -13,4 +13,4 @@
 #SBATCH --gpus=1
 
 
-python train.py
+python FastDPM.py -approxdiff VAR -kappa 1.0 -S 50 -schedule quadratic -n 25 -bs 5

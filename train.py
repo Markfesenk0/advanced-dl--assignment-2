@@ -1,6 +1,7 @@
 import copy
 import os
 from functools import partial
+import functools
 
 import torch
 import torchvision
@@ -8,6 +9,7 @@ from torchvision.transforms import transforms
 from tqdm import trange
 
 from models.unet import DDPMTrainObjective, UNet
+from samplers.DPMSolverPP import NoiseScheduleVP, model_wrapper, DPM_Solver
 from samplers.ddim import DDIMSampler
 from samplers.vannila import GaussianDiffusionSampler
 
@@ -47,7 +49,7 @@ def train(
         dropout: float = 0.1,  # dropout rate of resblock
 
         # Gaussian Diffusion parameters:
-        T: int = 1000,  # number of time steps
+        T: int = 200,  # number of time steps
         beta_1: float = 1e-4,  # start beta value
         beta_T: float = 0.02,  # end beta value
         mean_type: str = 'epsilon',  # predict variable
@@ -152,6 +154,11 @@ def evaluate(gen_batch_size=5, n_images=25, image_size=(1, 32, 32), sampler_type
         sampler = GaussianDiffusionSampler(ema_model, img_size=image_size[1], **sampler_kwargs).to(device)
     elif sampler_type == "DDIM":
         sampler = DDIMSampler(ema_model, **sampler_kwargs).to(device)
+    elif sampler_type == "DPM++":
+        noise_schedule = NoiseScheduleVP(schedule='discrete', betas=torch.linspace(sampler_kwargs['beta_1'], sampler_kwargs['beta_T'], sampler_kwargs['T']).double())
+        model_fn = model_wrapper(ema_model, noise_schedule, model_type="noise", model_kwargs=None)
+        dpm_sampler = DPM_Solver(model_fn, noise_schedule, algorithm_type="dpmsolver++")
+        sampler = functools.partial(dpm_sampler.sample, steps=200, denoise_to_zero=True, order=1, skip_type="time_uniform", method="multistep")
 
     # Sample image with model
     images = []
