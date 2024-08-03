@@ -9,7 +9,7 @@ from torchvision.transforms import transforms
 from tqdm import trange
 
 from models.unet import DDPMTrainObjective, UNet
-from samplers.DPMSolverPP import NoiseScheduleVP, model_wrapper, DPM_Solver
+from samplers.DPMSolverPP2 import NoiseScheduleVP, model_wrapper, DPMSolverPP
 from samplers.ddim import DDIMSampler
 from samplers.vannila import DDPMSampler
 
@@ -155,10 +155,10 @@ def evaluate(gen_batch_size=5, n_images=25, image_size=(1, 32, 32), sampler_type
     elif sampler_type == "DDIM":
         sampler = DDIMSampler(ema_model, **sampler_kwargs).to(device)
     elif sampler_type == "DPM++":
-        noise_schedule = NoiseScheduleVP(schedule='discrete', betas=torch.linspace(sampler_kwargs['beta_1'], sampler_kwargs['beta_T'], sampler_kwargs['T']).double())
-        model_fn = model_wrapper(ema_model, noise_schedule, model_type="noise", model_kwargs=None)
-        dpm_sampler = DPM_Solver(model_fn, noise_schedule, algorithm_type="dpmsolver++")
-        sampler = functools.partial(dpm_sampler.sample, steps=200, denoise_to_zero=True, order=1, skip_type="time_uniform", method="multistep")
+        noise_schedule = NoiseScheduleVP(betas=torch.linspace(sampler_kwargs['beta_1'], sampler_kwargs['beta_T'], sampler_kwargs['T']).double())
+        model_fn = model_wrapper(ema_model, noise_schedule)
+        dpm_sampler = DPMSolverPP(model_fn, noise_schedule)
+        sampler = functools.partial(dpm_sampler.sample, steps=200, denoise_to_zero=True, order=2)
 
     # Sample image with model
     images = []
@@ -190,4 +190,4 @@ if __name__ == '__main__':
                           mean_type=mean_type, var_type=var_type)
     # train()
     # evaluate(sampler_type="DDPM", sampler_kwargs=sampler_kwargs)
-    evaluate(sampler_type="DDIM", sampler_kwargs=sampler_kwargs)
+    evaluate(sampler_type="DPM++", sampler_kwargs=sampler_kwargs)
