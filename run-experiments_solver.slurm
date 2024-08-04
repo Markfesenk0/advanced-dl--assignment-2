@@ -13,4 +13,4 @@
 #SBATCH --gpus=1
 
 
-python train.py --sampler_type DDIM
+python train.py --sampler_type DPM_pp
