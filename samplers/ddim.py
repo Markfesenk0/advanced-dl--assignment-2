@@ -43,10 +43,11 @@ class DDIMSampler(nn.Module):
         return x_t_minus_one
 
     @torch.no_grad()
-    def forward(self, x_t, steps=25, eta=0.1, only_return_x_0=True, interval=1):
+    def forward(self, x_t, steps=499, eta=0.2, only_return_x_0=True, interval=1):
         """
         Sample from the model.
         """
+        steps = (self.T * 60) // 100
         step_intervals = self.T // steps
         time_steps = np.arange(0, self.T, step_intervals)
         time_steps = time_steps + 1

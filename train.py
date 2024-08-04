@@ -9,7 +9,8 @@ from torchvision.transforms import transforms
 from tqdm import trange
 
 from models.unet import DDPMTrainObjective, UNet
-from samplers.DPMSolverPP2 import NoiseScheduleVP, model_wrapper, DPMSolverPP
+from samplers.DPMSolverPP import NoiseScheduleVP, model_wrapper, DPMSolverPP
+from samplers.FastDPM import FastDPM
 from samplers.ddim import DDIMSampler
 from samplers.vannila import DDPMSampler
 
@@ -155,11 +156,14 @@ def evaluate(gen_batch_size=5, n_images=25, image_size=(1, 32, 32), sampler_type
     elif sampler_type == "DDIM":
         sampler = DDIMSampler(ema_model, **sampler_kwargs).to(device)
     elif sampler_type == "DPM++":
+        # use beta_1 = 0.1, beta_T = 20, T = 200, steps = 200
         noise_schedule = NoiseScheduleVP(betas=torch.linspace(sampler_kwargs['beta_1'], sampler_kwargs['beta_T'], sampler_kwargs['T']).double())
-        model_fn = model_wrapper(ema_model, noise_schedule)
+        model_fn = model_wrapper(ema_model, noise_schedule, steps=sampler_kwargs['T'])
         dpm_sampler = DPMSolverPP(model_fn, noise_schedule)
-        sampler = functools.partial(dpm_sampler.sample, steps=200, denoise_to_zero=True, order=2)
-
+        sampler = functools.partial(dpm_sampler.sample, steps=sampler_kwargs['T'], denoise_to_zero=True, order=3)
+    elif sampler_type == "FastDPM":
+        sampler = FastDPM(ema_model, steps=T)
+        sampler = sampler.sample
     # Sample image with model
     images = []
     for i in range(n_images // gen_batch_size):
@@ -174,8 +178,7 @@ def evaluate(gen_batch_size=5, n_images=25, image_size=(1, 32, 32), sampler_type
 
     # [Qualitative]: Saved generated images
     torchvision.utils.save_image(images,
-                                 os.path.join('/home/sharifm/students/benshapira/advanced-dl--assignment-2/logs/',
-                                              f'gen_samples_{sampler_type}.png'), nrow=gen_batch_size)
+                                 os.path.join('./logs', f'gen_samples_{sampler_type}.png'), nrow=gen_batch_size)
 
 
 if __name__ == '__main__':
@@ -189,5 +192,4 @@ if __name__ == '__main__':
     sampler_kwargs = dict(T=T, beta_1=beta_1, beta_T=beta_T,
                           mean_type=mean_type, var_type=var_type)
     # train()
-    # evaluate(sampler_type="DDPM", sampler_kwargs=sampler_kwargs)
-    evaluate(sampler_type="DPM++", sampler_kwargs=sampler_kwargs)
+    evaluate(sampler_type="DDIM", sampler_kwargs=sampler_kwargs)
