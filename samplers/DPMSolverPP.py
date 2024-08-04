@@ -55,7 +55,7 @@ def model_wrapper(
 
     def get_model_input_time(t_continuous):
         # return (t_continuous - 1. / noise_schedule.total_N) * 1000.
-        return ((t_continuous / 1.) * steps)
+        return (t_continuous / 1.) * steps
 
     def noise_pred_fn(x, t_continuous):
         t_input = get_model_input_time(t_continuous)

@@ -49,7 +49,7 @@ class DDIMSampler(nn.Module):
         """
         Sample from the model.
         """
-        steps = (self.T * 60) // 100
+        # steps = (self.T * 60) // 100
         step_intervals = self.T // steps
         time_steps = np.arange(0, self.T, step_intervals)
         time_steps = time_steps + 1

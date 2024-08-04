@@ -155,15 +155,16 @@ def evaluate(gen_batch_size=5, n_images=25, image_size=(1, 32, 32), sampler_type
     if sampler_type == "DDPM":
         sampler = DDPMSampler(ema_model, img_size=image_size[1], **sampler_kwargs).to(device)
     elif sampler_type == "DDIM":
-        sampler = DDIMSampler(ema_model, **sampler_kwargs).to(device)
+        ddim_sampler = DDIMSampler(ema_model, **sampler_kwargs).to(device)
+        sampler = functools.partial(ddim_sampler.sample, steps=sampler_kwargs['steps'])
     elif sampler_type == "DPM_pp":
         # use beta_1 = 0.1, beta_T = 20, T = 200, steps = 200
         noise_schedule = NoiseScheduleVP(betas=torch.linspace(sampler_kwargs['beta_1'], sampler_kwargs['beta_T'], sampler_kwargs['T']).double())
-        model_fn = model_wrapper(ema_model, noise_schedule, steps=sampler_kwargs['T'])
+        model_fn = model_wrapper(ema_model, noise_schedule, steps=sampler_kwargs['steps'])
         dpm_sampler = DPMSolverPP(model_fn, noise_schedule)
-        sampler = functools.partial(dpm_sampler.sample, steps=sampler_kwargs['T'], denoise_to_zero=True, order=3)
+        sampler = functools.partial(dpm_sampler.sample, steps=sampler_kwargs['steps'], denoise_to_zero=True, order=3)
     elif sampler_type == "FastDPM":
-        sampler = FastDPM(ema_model, steps=sampler_kwargs['T'], batchsize=gen_batch_size)
+        sampler = FastDPM(ema_model, steps=sampler_kwargs['steps'], batchsize=gen_batch_size)
         sampler = sampler.sample
     # Sample image with model
     images = []
@@ -206,7 +207,7 @@ if __name__ == '__main__':
     # train()
     number_of_images_to_generate = 1000
     for steps in [200, 50, 10, 5]:
-        sampler_kwargs['T'] = steps
+        sampler_kwargs['steps'] = steps
         experiment_dir = f'/home/sharifm/students/benshapira/advanced-dl--assignment-2/images/{sampler_type}_steps{steps}'
         os.makedirs(experiment_dir, exist_ok=True)
         evaluate(n_images=number_of_images_to_generate,
