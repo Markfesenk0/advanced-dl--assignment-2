@@ -227,7 +227,7 @@ class FastDPM:
         # map diffusion hyperparameters to gpu
         diffusion_hyperparams = self.calc_diffusion_hyperparams(**self.diffusion_config)
         for key in diffusion_hyperparams:
-            if key is not "T":
+            if key != "T":
                 diffusion_hyperparams[key] = map_gpu(diffusion_hyperparams[key])
 
         # sample
