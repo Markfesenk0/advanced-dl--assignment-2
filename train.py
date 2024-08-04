@@ -1,3 +1,4 @@
+import argparse
 import copy
 import os
 from functools import partial
@@ -155,7 +156,7 @@ def evaluate(gen_batch_size=5, n_images=25, image_size=(1, 32, 32), sampler_type
         sampler = DDPMSampler(ema_model, img_size=image_size[1], **sampler_kwargs).to(device)
     elif sampler_type == "DDIM":
         sampler = DDIMSampler(ema_model, **sampler_kwargs).to(device)
-    elif sampler_type == "DPM++":
+    elif sampler_type == "DPM_pp":
         # use beta_1 = 0.1, beta_T = 20, T = 200, steps = 200
         noise_schedule = NoiseScheduleVP(betas=torch.linspace(sampler_kwargs['beta_1'], sampler_kwargs['beta_T'], sampler_kwargs['T']).double())
         model_fn = model_wrapper(ema_model, noise_schedule, steps=sampler_kwargs['T'])
@@ -186,13 +187,18 @@ def evaluate(gen_batch_size=5, n_images=25, image_size=(1, 32, 32), sampler_type
 
 
 if __name__ == '__main__':
+    conf = argparse.ArgumentParser(description='Diffusion process.')
+    conf.add_argument("--sampler_type", type=str)
+    args = conf.parse_args()
+
     T = 200  # number of time steps
     beta_1 = 0.0001  # start beta value
     beta_T = 0.02  # end beta value
     mean_type = 'epsilon'  # predict variable
     var_type = 'fixedlarge'  # variance type
     logs_main_dir = '/home/sharifm/students/markfesenko/projects/DLAT-HW2/logs/'
-    sampler_type = "DDPM"
+
+    sampler_type = args.sampler_type
     batch_size = 500
 
     sampler_kwargs = dict(T=T, beta_1=beta_1, beta_T=beta_T,
