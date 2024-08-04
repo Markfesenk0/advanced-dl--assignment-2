@@ -4,6 +4,7 @@ import torch.nn.functional as F
 from tqdm import tqdm
 import numpy as np
 
+
 def extract_coefficients(v, t, shape):
     """
     Extract coefficients at specified timesteps and reshape for broadcasting.
@@ -11,6 +12,7 @@ def extract_coefficients(v, t, shape):
     gathered = torch.gather(v, dim=0, index=t)
     gathered = gathered.to(device=t.device, dtype=torch.float32)
     return gathered.view([t.shape[0]] + [1] * (len(shape) - 1))
+
 
 class DDIMSampler(nn.Module):
     def __init__(self, model, beta_1, beta_T, T, mean_type='epsilon', var_type='fixedlarge'):

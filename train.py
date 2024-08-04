@@ -141,7 +141,7 @@ def train(
 
 
 @torch.no_grad()
-def evaluate(gen_batch_size=5, n_images=25, image_size=(1, 32, 32), sampler_type="DDPM", sampler_kwargs: dict = None):
+def evaluate(gen_batch_size=5, n_images=25, image_size=(1, 32, 32), sampler_type="DDPM", sampler_kwargs: dict = None, experiment_dir=None):
     device = torch.device('cuda:0')
 
     # Load ema model
@@ -162,7 +162,7 @@ def evaluate(gen_batch_size=5, n_images=25, image_size=(1, 32, 32), sampler_type
         dpm_sampler = DPMSolverPP(model_fn, noise_schedule)
         sampler = functools.partial(dpm_sampler.sample, steps=sampler_kwargs['T'], denoise_to_zero=True, order=3)
     elif sampler_type == "FastDPM":
-        sampler = FastDPM(ema_model, steps=T)
+        sampler = FastDPM(ema_model, steps=sampler_kwargs['T'])
         sampler = sampler.sample
     # Sample image with model
     images = []
@@ -177,8 +177,12 @@ def evaluate(gen_batch_size=5, n_images=25, image_size=(1, 32, 32), sampler_type
     # (IS, IS_std), FID = get_inception_and_fid_score(...)
 
     # [Qualitative]: Saved generated images
-    torchvision.utils.save_image(images,
-                                 os.path.join('./logs', f'gen_samples_{sampler_type}.png'), nrow=gen_batch_size)
+    # torchvision.utils.save_image(images,
+    #                              os.path.join('/home/sharifm/students/benshapira/advanced-dl--assignment-2/logs/',
+    #                                           f'gen_samples_{sampler_type}.png'), nrow=gen_batch_size)
+    # save each image
+    for i, image in enumerate(images):
+        torchvision.utils.save_image(image, os.path.join(experiment_dir, f'gen_sample_{i}.png'))
 
 
 if __name__ == '__main__':
@@ -188,8 +192,19 @@ if __name__ == '__main__':
     mean_type = 'epsilon'  # predict variable
     var_type = 'fixedlarge'  # variance type
     logs_main_dir = '/home/sharifm/students/markfesenko/projects/DLAT-HW2/logs/'
+    sampler_type = "DDPM"
+    batch_size = 500
 
     sampler_kwargs = dict(T=T, beta_1=beta_1, beta_T=beta_T,
                           mean_type=mean_type, var_type=var_type)
     # train()
-    evaluate(sampler_type="DDIM", sampler_kwargs=sampler_kwargs)
+    number_of_images_to_generate = 1000
+    for steps in [200, 50, 10, 5]:
+        sampler_kwargs['T'] = steps
+        experiment_dir = f'/home/sharifm/students/benshapira/advanced-dl--assignment-2/images/{sampler_type}_steps{steps}'
+        os.makedirs(experiment_dir, exist_ok=True)
+        evaluate(n_images=number_of_images_to_generate,
+                 gen_batch_size=batch_size,
+                 sampler_type=sampler_type,
+                 sampler_kwargs=sampler_kwargs,
+                 experiment_dir=experiment_dir)
