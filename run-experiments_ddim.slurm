@@ -1,8 +1,8 @@
 #! /bin/sh
 
-#SBATCH --job-name=ddpm
-#SBATCH --output=logs/ddpm.out # redirect stdout
-#SBATCH --error=logs/ddpm.err # redirect stderr
+#SBATCH --job-name=ddim
+#SBATCH --output=logs/ddim.out # redirect stdout
+#SBATCH --error=logs/ddim.err # redirect stderr
 ##SBATCH --account=gpu-research
 #SBATCH --partition=studentkillable
 #SBATCH --time=1300 # max time (minutes)
