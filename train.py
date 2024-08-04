@@ -163,7 +163,7 @@ def evaluate(gen_batch_size=5, n_images=25, image_size=(1, 32, 32), sampler_type
         dpm_sampler = DPMSolverPP(model_fn, noise_schedule)
         sampler = functools.partial(dpm_sampler.sample, steps=sampler_kwargs['T'], denoise_to_zero=True, order=3)
     elif sampler_type == "FastDPM":
-        sampler = FastDPM(ema_model, steps=sampler_kwargs['T'])
+        sampler = FastDPM(ema_model, steps=sampler_kwargs['T'], batchsize=gen_batch_size)
         sampler = sampler.sample
     # Sample image with model
     images = []
