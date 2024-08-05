@@ -205,7 +205,7 @@ if __name__ == '__main__':
                           mean_type=mean_type, var_type=var_type)
     # train()
     number_of_images_to_generate = 1000
-    for steps in [200, 50, 10, 5]:
+    for steps in sorted([200, 50, 10, 5]):
         experiment_dir = f'/home/sharifm/students/benshapira/advanced-dl--assignment-2/images/{sampler_type}_steps{steps}'
         os.makedirs(experiment_dir, exist_ok=True)
         evaluate(n_images=number_of_images_to_generate,
