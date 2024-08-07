@@ -185,27 +185,36 @@ def evaluate(gen_batch_size=5, n_images=25, image_size=(1, 32, 32), sampler_type
     #                              os.path.join('/home/sharifm/students/benshapira/advanced-dl--assignment-2/logs/',
     #                                           f'gen_samples_{sampler_type}.png'), nrow=gen_batch_size)
     # save each image
-    torchvision.utils.save_image(images,
-                                 os.path.join('./logs/new', f'gen_samples_{sampler_type}_{steps}.png'),
-                                 nrow=gen_batch_size)
+    for i, image in enumerate(images):
+        torchvision.utils.save_image(image, os.path.join(experiment_dir, f'gen_sample_{i}.png'))
 
 
 if __name__ == '__main__':
+    conf = argparse.ArgumentParser(description='Diffusion process.')
+    conf.add_argument("--sampler_type", type=str)
+    args = conf.parse_args()
+
     T = 200  # number of time steps
-    steps = 10
     beta_1 = 0.0001  # start beta value
     beta_T = 0.02  # end beta value
     mean_type = 'epsilon'  # predict variable
     var_type = 'fixedlarge'  # variance type
     logs_main_dir = '/home/sharifm/students/markfesenko/projects/DLAT-HW2/logs/'
 
-    sampler_kwargs = dict(T=T, beta_1=beta_1, beta_T=beta_T,
-                          mean_type=mean_type, var_type=var_type, steps=steps)
-    # train()
-    for steps in [5, 10, 50, 200]:
-        sampler_kwargs['steps'] = steps
-        evaluate(sampler_type="FastDPM", sampler_kwargs=sampler_kwargs)
-        evaluate(sampler_type="DPM++", sampler_kwargs=sampler_kwargs)
-        evaluate(sampler_type="DDPM", sampler_kwargs=sampler_kwargs)
-        evaluate(sampler_type="DDIM", sampler_kwargs=sampler_kwargs)
+    sampler_type = args.sampler_type
+    batch_size = 500
 
+    sampler_kwargs = dict(T=T, beta_1=beta_1, beta_T=beta_T,
+                          mean_type=mean_type, var_type=var_type, steps=200)
+    # train()
+    number_of_images_to_generate = 1000
+    for steps in sorted([200, 50, 10, 5]):
+        sampler_kwargs['steps'] = steps
+        experiment_dir = f'/home/sharifm/students/benshapira/advanced-dl--assignment-2/images/{sampler_type}_steps{steps}'
+
+        os.makedirs(experiment_dir, exist_ok=True)
+        evaluate(n_images=number_of_images_to_generate,
+                 gen_batch_size=batch_size,
+                 sampler_type=sampler_type,
+                 sampler_kwargs=sampler_kwargs,
+                 experiment_dir=experiment_dir, steps=steps)
