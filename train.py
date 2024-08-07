@@ -142,7 +142,7 @@ def train(
 
 
 @torch.no_grad()
-def evaluate(gen_batch_size=5, n_images=25, image_size=(1, 32, 32), sampler_type="DDPM", sampler_kwargs: dict = None, experiment_dir=None, steps=20):
+def evaluate(gen_batch_size=5, n_images=25, image_size=(1, 32, 32), sampler_type="DDPM", sampler_kwargs: dict = None, experiment_dir=None):
     device = torch.device('cuda:0')
 
     # Load ema model
@@ -152,6 +152,7 @@ def evaluate(gen_batch_size=5, n_images=25, image_size=(1, 32, 32), sampler_type
     if sampler_kwargs is None:
         ckpt = torch.load(os.path.join(logs_main_dir, 'ckpt.pt'))
         sampler_kwargs = ckpt['sampler_kwargs']
+
     if sampler_type == "DDPM":
         sampler = DDPMSampler(ema_model, img_size=image_size[1], **sampler_kwargs).to(device)
     elif sampler_type == "DDIM":
@@ -210,7 +211,7 @@ if __name__ == '__main__':
     number_of_images_to_generate = 1000
     for steps in sorted([200, 50, 10, 5]):
         sampler_kwargs['steps'] = steps
-        experiment_dir = f'/home/sharifm/students/benshapira/advanced-dl--assignment-2/images/{sampler_type}_steps{steps}'
+        experiment_dir = f'/home/sharifm/students/benshapira/advanced-dl--assignment-2/images2/{sampler_type}_steps{steps}'
 
         os.makedirs(experiment_dir, exist_ok=True)
         evaluate(n_images=number_of_images_to_generate,
