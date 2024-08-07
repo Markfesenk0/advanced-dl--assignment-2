@@ -3,11 +3,13 @@ import copy
 import os
 from functools import partial
 import functools
-
+import numpy as np
 import torch
 import torchvision
 from torchvision.transforms import transforms
 from tqdm import trange
+# from PIL import Image
+# from diffusers import StableDiffusionPipeline, DPMSolverMultistepScheduler
 
 from models.unet import DDPMTrainObjective, UNet
 from samplers.DPMSolverPP import NoiseScheduleVP, model_wrapper, DPMSolverPP
@@ -168,6 +170,38 @@ def evaluate(gen_batch_size=5, n_images=25, image_size=(1, 32, 32), sampler_type
     elif sampler_type == "FastDPM":
         sampler = FastDPM(ema_model, steps=sampler_kwargs['steps'], T=sampler_kwargs['T'], approx_diff='STEP', beta_0=sampler_kwargs['beta_1'], beta_T=sampler_kwargs['beta_T'], img_size=image_size[-1], batchsize=gen_batch_size)
         sampler = sampler.sample
+    # generate samples using stable diffusion 2.1
+    # elif sampler_type == "FastDPM-2.1":
+    #     prompt = "A girl riding a bike in the park on a sunny day."
+    #     image_size = (5, 4, 128, 128)
+    #
+    #     pipe = StableDiffusionPipeline.from_pretrained("stabilityai/stable-diffusion-2-1", torch_dtype=torch.float16).to("cuda")
+    #     unet = pipe.unet
+    #     vae = pipe.vae
+    #
+    #     text_encoder = pipe.text_encoder
+    #     tokenizer = pipe.tokenizer
+    #     inputs = tokenizer(prompt, return_tensors="pt", padding=True, truncation=True).to("cuda")
+    #     text_embeddings = text_encoder(**inputs).last_hidden_state
+    #     text_embeddings = text_embeddings.repeat(image_size[0], 1, 1)
+    #
+    #     sampler = FastDPM(unet, steps=sampler_kwargs['steps'], T=1000, approx_diff='STEP', beta_0=0.00085, beta_T=0.012, img_size=image_size[-1], batchsize=image_size[0])
+    #     sampler = partial(sampler.sample, prompt=text_embeddings)
+    #
+    #     x_T = torch.randn(image_size, device=device, dtype=torch.float16)
+    #     latents = sampler(x_T.to(device))
+    #
+    #     latents = 1 / 0.18215 * latents
+    #     images = vae.decode(latents).sample
+    #     images = (images / 2 + 0.5).clamp(0, 1)
+    #
+    #     images = images.permute(0, 2, 3, 1).cpu().numpy()
+    #     images = (images * 255).astype(np.uint8)
+    #
+    #     concatenated_image = np.concatenate(images, axis=1)
+    #     concatenated_image_pil = Image.fromarray(concatenated_image)
+    #     concatenated_image_pil.save(os.path.join('./logs', f'gen_samples_{sampler_type}.png'))
+    #     return
 
     # Sample image with model
     images = []
@@ -178,13 +212,6 @@ def evaluate(gen_batch_size=5, n_images=25, image_size=(1, 32, 32), sampler_type
         images.append(batch_images)
     images = torch.cat(images, dim=0)
 
-    # [Quantitative]: TODO calculate scores
-    # (IS, IS_std), FID = get_inception_and_fid_score(...)
-
-    # [Qualitative]: Saved generated images
-    # torchvision.utils.save_image(images,
-    #                              os.path.join('/home/sharifm/students/benshapira/advanced-dl--assignment-2/logs/',
-    #                                           f'gen_samples_{sampler_type}.png'), nrow=gen_batch_size)
     # save each image
     for i, image in enumerate(images):
         torchvision.utils.save_image(image, os.path.join(experiment_dir, f'gen_sample_{i}.png'))

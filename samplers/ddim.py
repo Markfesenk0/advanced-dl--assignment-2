@@ -15,7 +15,7 @@ def extract_coefficients(v, t, shape):
 
 
 class DDIMSampler(nn.Module):
-    def __init__(self, model, beta_1, beta_T, T, mean_type='epsilon', var_type='fixedlarge', steps=200):
+    def __init__(self, model, beta_1, beta_T, T, steps, mean_type='epsilon', var_type='fixedlarge'):
         super().__init__()
         self.model = model
         self.T = T
@@ -46,7 +46,7 @@ class DDIMSampler(nn.Module):
         return x_t_minus_one
 
     @torch.no_grad()
-    def forward(self, x_t, eta=0.2, only_return_x_0=True, interval=1):
+    def forward(self, x_t, eta=0.2):
         """
         Sample from the model.
         """
@@ -57,16 +57,8 @@ class DDIMSampler(nn.Module):
         if self.steps == self.T:
             self.steps -= 1
 
-        samples = [x_t]
         with tqdm(reversed(range(self.steps)), colour="#6565b5", total=self.steps) as sampling_steps:
             for i in sampling_steps:
                 x_t = self.sample_one_step(x_t, time_steps[i], time_steps_prev[i], eta)
 
-                if not only_return_x_0 and ((self.steps - i) % interval == 0 or i == 0):
-                    samples.append(torch.clip(x_t, -1.0, 1.0))
-
-                sampling_steps.set_postfix(ordered_dict={"step": i + 1, "sample": len(samples)})
-
-        if only_return_x_0:
-            return x_t
-        return torch.stack(samples, dim=1)
+        return x_t
