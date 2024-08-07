@@ -1,5 +1,5 @@
 import torch
-from diffusers import StableDiffusionPipeline, DPMSolverMultistepScheduler, DDIMScheduler, DDPMScheduler
+from diffusers import StableDiffusionPipeline, DPMSolverMultistepScheduler, DDIMScheduler, DDPMScheduler, PNDMScheduler
 
 model_id = "stabilityai/stable-diffusion-2-1"
 
@@ -14,7 +14,7 @@ for step in [5, 10, 50, 100]:
         elif sampler_type == 'DDPM':
             pipe.scheduler = DDPMScheduler.from_config(pipe.scheduler.config)
         else:
-            pipe.scheduler = None
+            pipe.scheduler = PNDMScheduler.from_config(pipe.scheduler.config)
 
         pipe = pipe.to("cuda")
 
