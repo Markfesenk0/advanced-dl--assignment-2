@@ -218,4 +218,4 @@ if __name__ == '__main__':
                  gen_batch_size=batch_size,
                  sampler_type=sampler_type,
                  sampler_kwargs=sampler_kwargs,
-                 experiment_dir=experiment_dir, steps=steps)
+                 experiment_dir=experiment_dir)
