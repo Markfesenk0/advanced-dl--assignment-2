@@ -50,12 +50,12 @@ class NoiseScheduleVP:
 def model_wrapper(
         model,
         noise_schedule,
-        steps=200.
+        T=200
 ):
 
     def get_model_input_time(t_continuous):
-        # return (t_continuous - 1. / noise_schedule.total_N) * 1000.
-        return (t_continuous / 1.) * steps
+        # return (t_continuous - 1. / noise_schedule.total_N) * T
+        return ((t_continuous / 1.) * T)
 
     def noise_pred_fn(x, t_continuous):
         t_input = get_model_input_time(t_continuous)
@@ -106,7 +106,7 @@ class DPMSolverPP:
     def denoise_to_zero_fn(self, x, s):
         return self.data_prediction_fn(x, s)
 
-    def dpm_solver_first_update(self, x, s, t, model_s=None, return_intermediate=False):
+    def dpm_solver_first_update(self, x, s, t, model_s=None):
         ns = self.noise_schedule
         dims = x.dim()
         lambda_s, lambda_t = ns.marginal_lambda(s), ns.marginal_lambda(t)
@@ -122,10 +122,7 @@ class DPMSolverPP:
                 sigma_t / sigma_s * x
                 - alpha_t * phi_1 * model_s
         )
-        if return_intermediate:
-            return x_t, {'model_s': model_s}
-        else:
-            return x_t
+        return x_t
 
     def dpm_solver_second_update(self, x, model_prev_list, t_prev_list, t):
         ns = self.noise_schedule
@@ -189,13 +186,12 @@ class DPMSolverPP:
             raise ValueError("Solver order must be 1 or 2 or 3, got {}".format(order))
 
     def sample(self, x, steps=20, t_start=None, t_end=None, order=2, lower_order_final=True,
-               denoise_to_zero=False, return_intermediate=False):
+               denoise_to_zero=True):
 
         t_0 = 1. / self.noise_schedule.total_N if t_end is None else t_end
         t_T = self.noise_schedule.T if t_start is None else t_start
         assert t_0 > 0 and t_T > 0, "Time range needs to be greater than 0. For discrete-time DPMs, it needs to be in [1 / N, 1], where N is the length of betas array"
         device = x.device
-        intermediates = []
         with torch.no_grad():
             assert steps >= order
             timesteps = self.get_time_steps(t_T=t_T, t_0=t_0, N=steps, device=device)
@@ -205,13 +201,9 @@ class DPMSolverPP:
             t = timesteps[step]
             t_prev_list = [t]
             model_prev_list = [self.model_fn(x, t)]
-            if return_intermediate:
-                intermediates.append(x)
             for step in range(1, order):
                 t = timesteps[step]
                 x = self.dpm_solver_update(x, model_prev_list, t_prev_list, t, step)
-                if return_intermediate:
-                    intermediates.append(x)
                 t_prev_list.append(t)
                 model_prev_list.append(self.model_fn(x, t))
             for step in range(order, steps + 1):
@@ -222,8 +214,6 @@ class DPMSolverPP:
                 else:
                     step_order = order
                 x = self.dpm_solver_update(x, model_prev_list, t_prev_list, t, step_order)
-                if return_intermediate:
-                    intermediates.append(x)
                 for i in range(order - 1):
                     t_prev_list[i] = t_prev_list[i + 1]
                     model_prev_list[i] = model_prev_list[i + 1]
@@ -234,12 +224,8 @@ class DPMSolverPP:
             if denoise_to_zero:
                 t = torch.ones((1,)).to(device) * t_0
                 x = self.denoise_to_zero_fn(x, t)
-                if return_intermediate:
-                    intermediates.append(x)
-        if return_intermediate:
-            return x, intermediates
-        else:
-            return x
+
+        return x
 
 def interpolate_fn(x, xp, yp):
     N, K = x.shape[0], xp.shape[1]
