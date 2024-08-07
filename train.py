@@ -60,9 +60,9 @@ def train(
         # Training parameters:
         lr: float = 2e-4,  # target learning rate
         grad_clip: float = 1.0,  # gradient norm clipping
-        total_steps: int = 800_000,  # total training steps  # TODO
+        total_steps: int = 30_000,  # total training steps  # TODO
         warmup_param: int = 5000,  # learning rate warmup  # TODO
-        batch_size: int = 128,  # batch size
+        batch_size: int = 150,  # batch size
         ema_decay: float = 0.9999,  # ema decay rate
         save_every: int = 1000,  # frequency of saving checkpoints, 0 to disable during training
 ):
@@ -155,16 +155,19 @@ def evaluate(gen_batch_size=5, n_images=25, image_size=(1, 32, 32), sampler_type
     if sampler_type == "DDPM":
         sampler = DDPMSampler(ema_model, img_size=image_size[1], **sampler_kwargs).to(device)
     elif sampler_type == "DDIM":
-        sampler = DDIMSampler(ema_model, steps=steps, **sampler_kwargs).to(device)
+        sampler = DDIMSampler(ema_model, **sampler_kwargs).to(device)
     elif sampler_type == "DPM_pp":
-        # use beta_1 = 0.1, beta_T = 20, T = 200, steps = 200
+        # beta_1 = 0.0005, beta_T = 0.05
+        sampler_kwargs['beta_1'] = 0.0005
+        sampler_kwargs['beta_T'] = 0.05
         noise_schedule = NoiseScheduleVP(betas=torch.linspace(sampler_kwargs['beta_1'], sampler_kwargs['beta_T'], sampler_kwargs['T']).double())
-        model_fn = model_wrapper(ema_model, noise_schedule, steps=steps)
+        model_fn = model_wrapper(ema_model, noise_schedule=noise_schedule, T=sampler_kwargs['T'])
         dpm_sampler = DPMSolverPP(model_fn, noise_schedule)
-        sampler = functools.partial(dpm_sampler.sample, steps=steps, denoise_to_zero=True, order=3)
+        sampler = functools.partial(dpm_sampler.sample, steps=sampler_kwargs['steps'], denoise_to_zero=True, order=3)
     elif sampler_type == "FastDPM":
-        sampler = FastDPM(ema_model, steps=steps, batchsize=gen_batch_size)
+        sampler = FastDPM(ema_model, steps=sampler_kwargs['steps'], T=sampler_kwargs['T'], approx_diff='STEP', beta_0=sampler_kwargs['beta_1'], beta_T=sampler_kwargs['beta_T'], img_size=image_size[-1], batchsize=gen_batch_size)
         sampler = sampler.sample
+
     # Sample image with model
     images = []
     for i in range(n_images // gen_batch_size):
@@ -202,11 +205,13 @@ if __name__ == '__main__':
     batch_size = 500
 
     sampler_kwargs = dict(T=T, beta_1=beta_1, beta_T=beta_T,
-                          mean_type=mean_type, var_type=var_type)
+                          mean_type=mean_type, var_type=var_type, steps=200)
     # train()
     number_of_images_to_generate = 1000
-    for steps in sorted([199, 50, 10, 5]):
+    for steps in sorted([200, 50, 10, 5]):
+        sampler_kwargs['steps'] = steps
         experiment_dir = f'/home/sharifm/students/benshapira/advanced-dl--assignment-2/images/{sampler_type}_steps{steps}'
+
         os.makedirs(experiment_dir, exist_ok=True)
         evaluate(n_images=number_of_images_to_generate,
                  gen_batch_size=batch_size,

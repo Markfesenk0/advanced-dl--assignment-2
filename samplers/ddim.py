@@ -50,11 +50,12 @@ class DDIMSampler(nn.Module):
         """
         Sample from the model.
         """
-        # steps = (self.T * 60) // 100
         step_intervals = self.T // self.steps
         time_steps = np.arange(0, self.T, step_intervals)
         time_steps = time_steps + 1
         time_steps_prev = np.concatenate([[0], time_steps[:-1]])
+        if self.steps == self.T:
+            self.steps -= 1
 
         samples = [x_t]
         with tqdm(reversed(range(self.steps)), colour="#6565b5", total=self.steps) as sampling_steps:

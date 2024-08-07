@@ -12,7 +12,7 @@ def extract_coefficients(v, t, shape):
 
 
 class DDPMSampler(nn.Module):
-    def __init__(self, model, beta_1, beta_T, T, img_size=32,
+    def __init__(self, model, beta_1, beta_T, T, steps=10, img_size=32,
                  mean_type='epsilon', var_type='fixedlarge'):
         assert mean_type in ['xprev', 'xstart', 'epsilon']
         assert var_type in ['fixedlarge', 'fixedsmall']
@@ -20,10 +20,10 @@ class DDPMSampler(nn.Module):
 
         self.model = model
         self.T = T
+        self.steps = steps  # number of steps to sample# should be equal to T
         self.img_size = img_size
         self.mean_type = mean_type
         self.var_type = var_type
-
         self.register_buffer(
             'betas', torch.linspace(beta_1, beta_T, T).double())
         alphas = 1. - self.betas
@@ -107,7 +107,7 @@ class DDPMSampler(nn.Module):
         Sample from the model (Algorithm 2 in the paper).
         """
         x_t = x_T
-        for time_step in reversed(range(self.T)):
+        for time_step in reversed(range(self.steps)):
             t = x_t.new_ones([x_t.shape[0], ], dtype=torch.long) * time_step
             mean, log_var = self.compute_mean_variance(x_t=x_t, t=t)
             noise = torch.randn_like(x_t) if time_step > 0 else 0
