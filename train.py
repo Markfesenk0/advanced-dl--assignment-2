@@ -161,9 +161,6 @@ def evaluate(gen_batch_size=5, n_images=25, image_size=(1, 32, 32), sampler_type
     elif sampler_type == "DDIM":
         sampler = DDIMSampler(ema_model, **sampler_kwargs).to(device)
     elif sampler_type == "DPM_pp":
-        # beta_1 = 0.0005, beta_T = 0.05
-        sampler_kwargs['beta_1'] = 0.0005
-        sampler_kwargs['beta_T'] = 0.05
         noise_schedule = NoiseScheduleVP(betas=torch.linspace(sampler_kwargs['beta_1'], sampler_kwargs['beta_T'], sampler_kwargs['T']).double())
         model_fn = model_wrapper(ema_model, noise_schedule=noise_schedule, T=sampler_kwargs['T'])
         dpm_sampler = DPMSolverPP(model_fn, noise_schedule)
